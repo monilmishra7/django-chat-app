@@ -1,0 +1,92 @@
+{% extends 'chat/base.html' %}
+
+{% block content %}
+<div class="sidebar">
+    <div class="p-3">
+        <h5>Users</h5>
+        <div class="list-group">
+            {% for other_user in users %}
+                <a href="{% url 'chat:room' other_user.id %}" 
+                   class="list-group-item list-group-item-action {% if other_user == chat_user %}active{% endif %}">
+                    {{ other_user.username }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="container">
+        <h4>Chat with {{ chat_user.username }}</h4>
+        
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                {% for message in messages %}
+                    <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+                        <div class="message-content">
+                            {{ message.content }}
+                        </div>
+                        <small class="text-muted">
+                            {{ message.timestamp|date:'M d, Y H:i' }}
+                        </small>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <form id="chat-form" class="chat-input">
+                <div class="input-group">
+                    <input type="text" id="chat-message-input" class="form-control" 
+                           placeholder="Type your message...">
+                    <button class="btn btn-primary" type="submit">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/chat/{{ room.id }}/'
+    );
+
+    const messagesList = document.querySelector('#chat-messages');
+    const chatForm = document.querySelector('#chat-form');
+    const messageInput = document.querySelector('#chat-message-input');
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message ' + 
+            (data.sender === '{{ request.user.username }}' ? 'sent' : 'received');
+        
+        messageDiv.innerHTML = `
+            <div class="message-content">${data.message}</div>
+            <small class="text-muted">Just now</small>
+        `;
+        
+        messagesList.appendChild(messageDiv);
+        messagesList.scrollTop = messagesList.scrollHeight;
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = messageInput.value;
+        
+        if (message.trim()) {
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInput.value = '';
+        }
+    });
+
+    // Scroll to bottom on load
+    messagesList.scrollTop = messagesList.scrollHeight;
+</script>
+{% endblock %}

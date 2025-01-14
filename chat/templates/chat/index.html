@@ -1,0 +1,24 @@
+{% extends 'chat/base.html' %}
+
+{% block content %}
+<div class="sidebar">
+    <div class="p-3">
+        <h5>Users</h5>
+        <div class="list-group">
+            {% for other_user in users %}
+                <a href="{% url 'chat:room' other_user.id %}" 
+                   class="list-group-item list-group-item-action">
+                    {{ other_user.username }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="container">
+        <h4>Welcome to Django Chat</h4>
+        <p>Select a user from the sidebar to start chatting.</p>
+    </div>
+</div>
+{% endblock %}
