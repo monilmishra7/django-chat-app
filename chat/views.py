@@ -3,6 +3,26 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from .models import ChatRoom, Message
+from django.contrib.auth.views import LoginView
+from django.contrib.sessions.models import Session
+from django.utils import timezone
+
+
+class CustomLoginView(LoginView):
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('chat:index')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        user = form.get_user()
+        Session.objects.filter(
+            expire_date__gt=timezone.now()
+        ).filter(
+            session_data__contains=str(user.id)
+        ).delete()
+        
+        return super().form_valid(form)
 
 def register(request):
     if request.method == 'POST':
