@@ -47,15 +47,25 @@
 
 {% block extra_js %}
 <script>
+    const roomId = '{{ room.id }}';
     const chatSocket = new WebSocket(
-        'ws://' + window.location.host + '/ws/chat/{{ room.id }}/'
+        'ws://'
+        + window.location.host.split(':')[0]
+        + ':8001'
+        + '/ws/chat/'
+        + roomId
+        + '/'
     );
 
     const messagesList = document.querySelector('#chat-messages');
     const chatForm = document.querySelector('#chat-form');
     const messageInput = document.querySelector('#chat-message-input');
 
+    chatSocket.onerror = function(e) {
+        console.error('WebSocket error:', e);
+    };
     chatSocket.onmessage = function(e) {
+        console.log('WebSocket connection established');
         const data = JSON.parse(e.data);
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message ' + 
