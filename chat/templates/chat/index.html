@@ -3,11 +3,14 @@
 {% block content %}
 <div class="sidebar">
     <div class="p-3">
-        <h5>Users</h5>
+        <h5 class="mb-3 ps-3">
+            <i class="fas fa-users me-2"></i>Users
+        </h5>
         <div class="list-group">
             {% for other_user in users %}
                 <a href="{% url 'chat:room' other_user.id %}" 
                    class="list-group-item list-group-item-action">
+                    <i class="fas fa-user me-2"></i>
                     {{ other_user.username }}
                 </a>
             {% endfor %}
@@ -17,8 +20,11 @@
 
 <div class="main-content">
     <div class="container">
-        <h4>Welcome to Django Chat</h4>
-        <p>Select a user from the sidebar to start chatting.</p>
+        <div class="text-center py-5">
+            <i class="fas fa-comments fa-4x mb-3" style="color: var(--primary-color)"></i>
+            <h4 class="mb-3">Welcome to ChitChat</h4>
+            <p class="text-muted">Select a user from the sidebar to start chatting.</p>
+        </div>
     </div>
 </div>
 {% endblock %}
