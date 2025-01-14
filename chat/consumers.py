@@ -6,22 +6,39 @@ from django.contrib.auth.models import User
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        self.user = self.scope["user"]
+        if not self.user.is_authenticated:
+            await self.close()
+            return
+
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = f'chat_{self.room_id}'
 
-        # Join room group
+        # Verify room exists and user is participant
+        if not await self.verify_room_access():
+            await self.close()
+            return
+
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
         await self.accept()
 
+    @database_sync_to_async
+    def verify_room_access(self):
+        try:
+            room = ChatRoom.objects.get(id=self.room_id)
+            return room.participants.filter(id=self.user.id).exists()
+        except ChatRoom.DoesNotExist:
+            return False
+
     async def disconnect(self, close_code):
-        # Leave room group
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        if hasattr(self, 'room_group_name'):
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+            )
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
@@ -36,7 +53,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             {
                 'type': 'chat_message',
                 'message': message,
-                'sender': self.scope['user'].username
+                'sender': self.user.username
             }
         )
 
@@ -52,6 +69,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         room = ChatRoom.objects.get(id=self.room_id)
         Message.objects.create(
             room=room,
-            sender=self.scope['user'],
+            sender=self.user,
             content=message
         )
