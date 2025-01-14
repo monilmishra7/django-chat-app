@@ -18,7 +18,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env()
 
-print(f"Environ object: {env}")
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'),overwrite=True)
 
 
@@ -80,18 +79,6 @@ WSGI_APPLICATION = 'chat_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Add this before DATABASES configuration
-print("Environment values being used:")
-print(f"DB_NAME from env: {env('DB_NAME')}")
-print(f"DB_PORT from env: {env.int('DB_PORT')}")
-
-print(f"Looking for .env at: {os.path.join(BASE_DIR, '.env')}")
-print(f"BASE_DIR is: {BASE_DIR}")
-
-
-print("System environment variables:")
-print(f"DB_NAME from os.environ: {os.environ.get('DB_NAME', 'Not set')}")
-print(f"DB_PORT from os.environ: {os.environ.get('DB_PORT', 'Not set')}")
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -102,9 +89,7 @@ DATABASES = {
         'PORT': env.int('DB_PORT'),
     }
 }
-# Add this after DATABASES configuration
-print("Final database configuration:")
-print(DATABASES['default'])
+
 # Channels configuration
 ASGI_APPLICATION = 'chat_project.asgi.application'
 CHANNEL_LAYERS = {
