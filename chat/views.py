@@ -6,6 +6,9 @@ from .models import ChatRoom, Message
 from django.contrib.auth.views import LoginView
 from django.contrib.sessions.models import Session
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CustomLoginView(LoginView):
@@ -15,14 +18,25 @@ class CustomLoginView(LoginView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
+        """Override form_valid to manage sessions properly"""
         user = form.get_user()
-        Session.objects.filter(
+        logger.info(f"Login attempt for user: {user.username}")
+        
+        # Get all existing sessions for this user
+        user_sessions = Session.objects.filter(
             expire_date__gt=timezone.now()
         ).filter(
-            session_data__contains=str(user.id)
-        ).delete()
+            session_data__contains=f'"_auth_user_id":"{user.id}"'
+        )
         
-        return super().form_valid(form)
+        # Delete old sessions for this user
+        if user_sessions.exists():
+            user_sessions.delete()
+            logger.info(f"Deleted old sessions for user {user.username}")
+
+        response = super().form_valid(form)
+        logger.info(f"New session created for {user.username}")
+        return response
 
 def register(request):
     if request.method == 'POST':
